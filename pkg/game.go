@@ -19,47 +19,80 @@ func init() {
 type Game struct {
 	Players      [4]player.Player
 	CoveredCards []core.Card
+	pool         *core.CardPool
 
-	defendTeam   uint8
-	assaultScore uint8
+	mainCardName    string
+	mainCardOrigNum uint8
+	defendTeam      uint8
+	assaultScore    uint8
 }
 
-func NewGame(playerList [4]player.Player) *Game {
-	return &Game{
+func NewGame(playerList [4]player.Player, mainCard string) *Game {
+	game := Game{
 		Players: playerList,
 	}
+	// set main card
+	if _, ok := def.MapNameToCard[mainCard]; ok {
+		game.mainCardName = mainCard
+	} else {
+		game.mainCardName = "2"
+	}
+	for num, name := range def.MapCardName {
+		if name == mainCard {
+			game.mainCardOrigNum = num
+			delete(def.MapCardName, num)
+			break
+		}
+	}
+	def.MapCardName[15] = mainCard
+
+	def.Init()
+	fmt.Printf("游戏准备完毕，本轮牌库: %+v\n\n", def.MapCardName)
+	return &game
 }
 
 func (g *Game) Start() {
-	mainColor, p0 := g.AssignCards()
-	g.defendTeam = p0.GetTeam()
+	p0, err := g.AssignCards()
+	if err != nil {
+		log.Fatal(err)
+	}
+	g.defendTeam = g.Players[1].GetTeam()
 	for !g.Players[0].IsFinished() {
 		// p0
 		shot := p0.NewShot()
-		round := core.NewRound(mainColor, *shot)
+		round := core.NewRound(*shot)
 
 		// p1
 		p1, err := g.nextPlayer(p0)
 		if err != nil {
 			log.Fatal(err)
 		}
-		shot = p1.NextShot(round)
+		shot, err = p1.NextShot(round)
+		if err != nil {
+			log.Fatal(err)
+		}
 		round.AddShot(*shot)
 
 		// p2
-		p2, err := g.nextPlayer(p0)
+		p2, err := g.nextPlayer(p1)
 		if err != nil {
 			log.Fatal(err)
 		}
-		shot = p2.NextShot(round)
+		shot, err = p2.NextShot(round)
+		if err != nil {
+			log.Fatal(err)
+		}
 		round.AddShot(*shot)
 
 		// p3
-		p3, err := g.nextPlayer(p0)
+		p3, err := g.nextPlayer(p2)
 		if err != nil {
 			log.Fatal(err)
 		}
-		shot = p3.NextShot(round)
+		shot, err = p3.NextShot(round)
+		if err != nil {
+			log.Fatal(err)
+		}
 		round.AddShot(*shot)
 
 		team, score, playerName := round.GetResult()
@@ -69,6 +102,9 @@ func (g *Game) Start() {
 		}
 		if team != g.defendTeam {
 			g.assaultScore += score
+			fmt.Printf("进攻方得到%d分，目前共有%d分\n", score, g.assaultScore)
+		} else {
+			fmt.Printf("防守方逃脱%d分，目前进攻方共有%d分\n", score, g.assaultScore)
 		}
 	}
 	// get result
@@ -88,24 +124,24 @@ func (g *Game) Start() {
 
 	if g.assaultScore >= 80 {
 		fmt.Printf("进攻方获胜，共得到%d分，获胜玩家：", g.assaultScore)
-		for _, player := range g.Players {
-			if player.GetTeam() != g.defendTeam {
-				fmt.Printf("%s ", player.GetName())
+		for _, p := range g.Players {
+			if p.GetTeam() != g.defendTeam {
+				fmt.Printf("%s ", p.GetName())
 			}
 		}
 	} else {
 		fmt.Printf("防守方获胜，进攻方只获得%d分，获胜玩家：", g.assaultScore)
-		for _, player := range g.Players {
-			if player.GetTeam() == g.defendTeam {
-				fmt.Printf("%s ", player.GetName())
+		for _, p := range g.Players {
+			if p.GetTeam() == g.defendTeam {
+				fmt.Printf("%s ", p.GetName())
 			}
 		}
 	}
 	fmt.Println()
 }
 
-func (g *Game) AssignCards() (def.CardColor, player.Player) {
-	cards := initialCards()
+func (g *Game) AssignCards() (player.Player, error) {
+	cards := initialCards(g.mainCardOrigNum)
 	rand.Shuffle(len(cards), func(i, j int) {
 		cards[i], cards[j] = cards[j], cards[i]
 	})
@@ -117,32 +153,42 @@ func (g *Game) AssignCards() (def.CardColor, player.Player) {
 	// TODO: bid for the main color
 	startPlayer := g.Players[0]
 	mainColor := startPlayer.BidMainColor()
-	for _, player := range g.Players {
-		player.SetMainColor(mainColor)
+	g.pool = core.NewCardPool(mainColor)
+	for _, p := range g.Players {
+		p.SetMainColor(*g.pool)
 	}
-	g.SetCoveredCards(origCoveredCards, startPlayer)
-	return mainColor, startPlayer
+	if err := g.SetCoveredCards(origCoveredCards, startPlayer); err != nil {
+		return nil, err
+	}
+	return startPlayer, nil
 }
 
-func (g *Game) SetCoveredCards(cardList []core.Card, player player.Player) {
-	g.CoveredCards = player.SetCoveredCards(cardList)
+func (g *Game) SetCoveredCards(cardList []core.Card, player player.Player) error {
+	coveredCards, err := player.SetCoveredCards(cardList)
+	if err != nil {
+		return err
+	}
+	g.CoveredCards = coveredCards
+	return nil
 }
 
 func (g *Game) getPlayerByName(name string) (player.Player, error) {
-	for _, player := range g.Players {
-		if player.GetName() == name {
-			return player, nil
+	for _, p := range g.Players {
+		if p.GetName() == name {
+			return p, nil
 		}
 	}
 	return nil, fmt.Errorf("unable to find player %q", name)
 }
 
 func (g *Game) nextPlayer(curPlayer player.Player) (player.Player, error) {
-	idx := 0
-	for idx < len(g.Players) {
-		idx += 1
-		if g.Players[idx-1].GetName() == curPlayer.GetName() {
-			return g.Players[idx], nil
+	for idx := 0; idx < len(g.Players); idx++ {
+		if g.Players[idx].GetName() == curPlayer.GetName() {
+			if idx == len(g.Players)-1 {
+				return g.Players[0], nil
+			} else {
+				return g.Players[idx+1], nil
+			}
 		}
 	}
 	return nil, errors.New("unable to find next player")
@@ -169,14 +215,17 @@ func initialCard(n uint8) []core.Card {
 	}
 }
 
-func initialCards() []core.Card {
+func initialCards(mainCardNum uint8) []core.Card {
 	var cardList []core.Card
 	for num := 0; num < 2; num++ {
-		for i := 3; i <= 15; i++ {
+		for i := 2; i <= 15; i++ {
+			if uint8(i) == mainCardNum {
+				continue
+			}
 			cardList = append(cardList, initialCard(uint8(i))...)
 		}
-		cardList = append(cardList, core.Card{Num: 21})
-		cardList = append(cardList, core.Card{Num: 22})
+		cardList = append(cardList, core.Card{Num: 21, IsMain: true})
+		cardList = append(cardList, core.Card{Num: 22, IsMain: true})
 	}
 	return cardList
 }

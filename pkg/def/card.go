@@ -10,6 +10,7 @@ const (
 
 var (
 	MapCardName = map[uint8]string{
+		2:  "2",
 		3:  "3",
 		4:  "4",
 		5:  "5",
@@ -22,7 +23,7 @@ var (
 		12: "Q",
 		13: "K",
 		14: "A",
-		15: "2",
+		// 15: "main card, should be set by game.NewGame()"
 		21: "小",
 		22: "大",
 	}
@@ -32,6 +33,12 @@ var (
 		"cao":  CardColorClub,
 		"fang": CardColorDiamond,
 	}
+	MapColorZnCh = map[CardColor]string{
+		CardColorSpade:   "黑桃",
+		CardColorHeart:   "红桃",
+		CardColorClub:    "草花",
+		CardColorDiamond: "方块",
+	}
 
 	MapNameToCard  map[string]uint8
 	MapColorToCard map[CardColor]string
@@ -39,7 +46,7 @@ var (
 
 type CardColor string
 
-func init() {
+func Init() {
 	MapNameToCard = make(map[string]uint8)
 	for k, v := range MapCardName {
 		MapNameToCard[v] = k

@@ -34,17 +34,19 @@ func NewCards(mainColor def.CardColor, cardList ...Card) Cards {
 	return cards
 }
 
-func ParseCards(mainColor def.CardColor, rawStr string) (*Cards, error) {
+func ParseCards(pool CardPool, rawStr string) (*Cards, error) {
 	var cardList []Card
 	cardStrList := strings.Split(rawStr, " ")
+	curColor := def.CardColorNil
 	for _, cardStr := range cardStrList {
-		card, err := ParseCard(cardStr)
+		card, err := pool.ParseCard(cardStr, curColor)
 		if err != nil {
 			return nil, err
 		}
 		cardList = append(cardList, *card)
+		curColor = card.Color
 	}
-	cards := NewCards(mainColor, cardList...)
+	cards := NewCards(pool.MainColor, cardList...)
 	return &cards, nil
 }
 
@@ -156,15 +158,7 @@ func (cards *Cards) LargerOrEqualTo(others *Cards) bool {
 	if curNum != otherNum {
 		return curNum > otherNum
 	}
-	if curBig.Color == otherBig.Color {
-		return curBig.Num >= otherBig.Num
-	} else if curBig.Color == cards.mainColor {
-		return true
-	} else if otherBig.Color == cards.mainColor {
-		return false
-	} else {
-		return true
-	}
+	return curBig.LargerOrEqualTo(otherBig)
 }
 
 func (cards *Cards) String() string {
