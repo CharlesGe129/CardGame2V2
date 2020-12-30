@@ -8,6 +8,8 @@ import (
 
 	"github.com/CharlesGe129/CardGame2V2/pkg"
 	"github.com/CharlesGe129/CardGame2V2/pkg/player"
+	"github.com/CharlesGe129/CardGame2V2/pkg/player/ai"
+	"github.com/CharlesGe129/CardGame2V2/pkg/player/human"
 	"github.com/rs/zerolog"
 	zlog "github.com/rs/zerolog/log"
 	"github.com/rs/zerolog/pkgerrors"
@@ -31,10 +33,10 @@ func main() {
 	InitLog()
 
 	players := [4]player.Player{
-		player.NewHumanPlayer("玩家1", 1),
-		player.NewAiPlayer("电脑1", 2),
-		player.NewAiPlayer("电脑2", 1),
-		player.NewAiPlayer("电脑3", 2),
+		human.NewHumanPlayer("玩家1", 1),
+		ai.NewAiPlayer("电脑1", 2),
+		ai.NewAiPlayer("电脑2", 1),
+		ai.NewAiPlayer("电脑3", 2),
 	}
 	game := pkg.NewGame(players, "K")
 	game.Start()

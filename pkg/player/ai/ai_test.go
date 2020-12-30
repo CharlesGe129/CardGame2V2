@@ -1,4 +1,4 @@
-package player
+package ai
 
 import (
 	"testing"
@@ -25,7 +25,7 @@ func TestAI_NextShot_HasCard(t *testing.T) {
 	require.NoError(t, err)
 	_, cardsGot := shotGot.Info()
 	require.Equal(t, []core.Card{cardList[0]}, cardsGot.Cards)
-	require.Equal(t, []core.Card{cardList[0]}, player.cardsByColor[def.CardColorClub])
+	require.Equal(t, []core.Card{cardList[0]}, player.CardsByColor[def.CardColorClub])
 
 	// double
 	player = NewAiPlayer("测试", 1)
@@ -77,8 +77,8 @@ func TestAI_NextShot_NotEnoughCard(t *testing.T) {
 	require.NoError(t, err)
 	_, cardsGot := shotGot.Info()
 	require.Equal(t, cardList, cardsGot.Cards)
-	require.Empty(t, player.cardsByColor[def.CardColorClub])
-	require.Empty(t, player.cardsByColor[def.CardColorDiamond])
+	require.Empty(t, player.CardsByColor[def.CardColorClub])
+	require.Empty(t, player.CardsByColor[def.CardColorDiamond])
 
 	// 0+2main
 	player = NewAiPlayer("测试", 1)
@@ -101,8 +101,8 @@ func TestAI_NextShot_NotEnoughCard(t *testing.T) {
 	require.NoError(t, err)
 	_, cardsGot = shotGot.Info()
 	require.Equal(t, cardList, cardsGot.Cards)
-	require.Empty(t, player.cardsByColor[def.CardColorClub])
-	require.Empty(t, player.cardsByColor[def.CardColorDiamond])
+	require.Empty(t, player.CardsByColor[def.CardColorClub])
+	require.Empty(t, player.CardsByColor[def.CardColorDiamond])
 
 	// 0+0main+2
 	player = NewAiPlayer("测试", 1)
@@ -125,8 +125,8 @@ func TestAI_NextShot_NotEnoughCard(t *testing.T) {
 	require.NoError(t, err)
 	_, cardsGot = shotGot.Info()
 	require.Equal(t, cardList, cardsGot.Cards)
-	require.Empty(t, player.cardsByColor[def.CardColorClub])
-	require.Empty(t, player.cardsByColor[def.CardColorDiamond])
+	require.Empty(t, player.CardsByColor[def.CardColorClub])
+	require.Empty(t, player.CardsByColor[def.CardColorDiamond])
 }
 
 func TestAI_NextShot_MainCards(t *testing.T) {
@@ -151,7 +151,7 @@ func TestAI_NextShot_MainCards(t *testing.T) {
 	require.NoError(t, err)
 	_, cardsGot := shotGot.Info()
 	require.Equal(t, cardList, cardsGot.Cards)
-	require.Empty(t, player.cardsByColor[def.CardColorClub])
+	require.Empty(t, player.CardsByColor[def.CardColorClub])
 
 	// 1main+1
 	player = NewAiPlayer("测试", 1)
@@ -174,8 +174,8 @@ func TestAI_NextShot_MainCards(t *testing.T) {
 	require.NoError(t, err)
 	_, cardsGot = shotGot.Info()
 	require.Equal(t, cardList, cardsGot.Cards)
-	require.Empty(t, player.cardsByColor[def.CardColorClub])
-	require.Empty(t, player.cardsByColor[def.CardColorHeart])
+	require.Empty(t, player.CardsByColor[def.CardColorClub])
+	require.Empty(t, player.CardsByColor[def.CardColorHeart])
 
 	// 1大+1K
 	player = NewAiPlayer("测试", 1)
@@ -200,10 +200,10 @@ func TestAI_NextShot_MainCards(t *testing.T) {
 
 	for idx, card := range cardList {
 		if card.Num == 22 {
-			cardList[idx].Color = player.mainColor
+			cardList[idx].Color = player.MainColor
 		}
 	}
 	require.Equal(t, cardList, cardsGot.Cards)
-	require.Empty(t, player.cardsByColor[def.CardColorClub])
-	require.Empty(t, player.cardsByColor[def.CardColorHeart])
+	require.Empty(t, player.CardsByColor[def.CardColorClub])
+	require.Empty(t, player.CardsByColor[def.CardColorHeart])
 }

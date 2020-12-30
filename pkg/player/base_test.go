@@ -5,12 +5,13 @@ import (
 
 	"github.com/CharlesGe129/CardGame2V2/pkg/core"
 	"github.com/CharlesGe129/CardGame2V2/pkg/def"
+	"github.com/CharlesGe129/CardGame2V2/pkg/player/ai"
 	"github.com/stretchr/testify/require"
 )
 
 func TestBasePlayer_GetCards_Double(t *testing.T) {
 	// no doubles
-	player := NewAiPlayer("测试", 1)
+	player := ai.NewAiPlayer("测试", 1)
 	curCardList := []core.Card{
 		{Num: 10, Color: def.CardColorClub, IsMain: false},
 		{Num: 9, Color: def.CardColorClub, IsMain: false},
@@ -25,7 +26,7 @@ func TestBasePlayer_GetCards_Double(t *testing.T) {
 	require.Empty(t, cardList)
 
 	// has 1 doubles
-	player = NewAiPlayer("测试", 1)
+	player = ai.NewAiPlayer("测试", 1)
 	curCardList = []core.Card{
 		{Num: 10, Color: def.CardColorClub, IsMain: false},
 		{Num: 9, Color: def.CardColorClub, IsMain: false},
@@ -44,7 +45,7 @@ func TestBasePlayer_GetCards_Double(t *testing.T) {
 	}, cardList)
 
 	// has big doubles
-	player = NewAiPlayer("测试", 1)
+	player = ai.NewAiPlayer("测试", 1)
 	curCardList = []core.Card{
 		{Num: 14, Color: def.CardColorClub, IsMain: false},
 		{Num: 13, Color: def.CardColorClub, IsMain: false},
@@ -65,7 +66,7 @@ func TestBasePlayer_GetCards_Double(t *testing.T) {
 	}, cardList)
 
 	// has small doubles
-	player = NewAiPlayer("测试", 1)
+	player = ai.NewAiPlayer("测试", 1)
 	curCardList = []core.Card{
 		{Num: 14, Color: def.CardColorClub, IsMain: false},
 		{Num: 9, Color: def.CardColorClub, IsMain: false},

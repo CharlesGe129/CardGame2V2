@@ -1,4 +1,4 @@
-package player
+package human
 
 import (
 	"bufio"
@@ -7,19 +7,20 @@ import (
 
 	"github.com/CharlesGe129/CardGame2V2/pkg/core"
 	"github.com/CharlesGe129/CardGame2V2/pkg/def"
+	"github.com/CharlesGe129/CardGame2V2/pkg/player/common"
 )
 
 type HumanPlayer struct {
-	player
+	common.Player
 	scanner *bufio.Scanner
 }
 
 func NewHumanPlayer(name string, team uint8) *HumanPlayer {
 	return &HumanPlayer{
-		player: player{
+		Player: common.Player{
 			Name:         name,
 			Team:         team,
-			cardsByColor: make(map[def.CardColor][]core.Card),
+			CardsByColor: make(map[def.CardColor][]core.Card),
 		},
 		scanner: bufio.NewScanner(os.Stdin),
 	}
@@ -36,9 +37,9 @@ func (p *HumanPlayer) BidMainColor() def.CardColor {
 }
 
 func (p *HumanPlayer) ShowCards() {
-	p.sortCards()
-	mainCards := p.cardsByColor[p.mainColor]
-	fmt.Printf("[王]" + def.MapColorZnCh[p.mainColor] + ": ")
+	p.SortCards()
+	mainCards := p.CardsByColor[p.MainColor]
+	fmt.Printf("[王]" + def.MapColorZnCh[p.MainColor] + ": ")
 	for _, card := range mainCards {
 		if card.Num != 15 {
 			fmt.Printf(card.Name())
@@ -47,8 +48,8 @@ func (p *HumanPlayer) ShowCards() {
 		}
 	}
 	fmt.Println()
-	for color, cards := range p.cardsByColor {
-		if color == p.mainColor {
+	for color, cards := range p.CardsByColor {
+		if color == p.MainColor {
 			continue
 		}
 		fmt.Printf(def.MapColorZnCh[color] + ": ")
@@ -60,13 +61,13 @@ func (p *HumanPlayer) ShowCards() {
 }
 
 func (p *HumanPlayer) AddCard(card core.Card) {
-	cardList, ok := p.cardsByColor[card.Color]
+	cardList, ok := p.CardsByColor[card.Color]
 	if ok {
-		p.cardsByColor[card.Color] = append(cardList, card)
-	} else if p.mainColor != def.CardColorNil {
-		p.cardsByColor[p.mainColor] = append(p.cardsByColor[p.mainColor], card)
+		p.CardsByColor[card.Color] = append(cardList, card)
+	} else if p.MainColor != def.CardColorNil {
+		p.CardsByColor[p.MainColor] = append(p.CardsByColor[p.MainColor], card)
 	} else {
-		p.cardsByColor[card.Color] = []core.Card{card}
+		p.CardsByColor[card.Color] = []core.Card{card}
 	}
 }
 
@@ -83,7 +84,7 @@ func (p *HumanPlayer) NextShot(r *core.Round) (*core.Shot, error) {
 		case "help", "h":
 			fmt.Println("输入`round`查看本轮其他玩家已打的牌，输入`show`查看自己手牌")
 		default:
-			cards, err := core.ParseCards(p.pool, rawStr)
+			cards, err := core.ParseCards(p.Pool, rawStr)
 			if err != nil {
 				fmt.Printf("出错了: \n%s\n\n", err)
 				continue
@@ -93,7 +94,7 @@ func (p *HumanPlayer) NextShot(r *core.Round) (*core.Shot, error) {
 				fmt.Printf("出错了: \n%s\n\n", err)
 				continue
 			}
-			realCards := core.NewCards(p.mainColor, realCardList...)
+			realCards := core.NewCards(p.MainColor, realCardList...)
 			return core.NewShot(realCards, p.Team, p.Name), nil
 		}
 	}
@@ -118,14 +119,14 @@ func (p *HumanPlayer) NewShot() *core.Shot {
 
 func (p *HumanPlayer) RemoveCards(rawCardList []core.Card) ([]core.Card, error) {
 	cardsByColor := make(map[def.CardColor][]core.Card)
-	for color, cardList := range p.cardsByColor {
+	for color, cardList := range p.CardsByColor {
 		cardsByColor[color] = append([]core.Card{}, cardList...)
 	}
 	realCardList := make([]core.Card, 0, len(rawCardList))
 	for _, card := range rawCardList {
 		color := card.Color
 		if card.IsMain {
-			color = p.mainColor
+			color = p.MainColor
 		}
 		curCardList := cardsByColor[color]
 		for idx, curCard := range curCardList {
@@ -140,7 +141,7 @@ func (p *HumanPlayer) RemoveCards(rawCardList []core.Card) ([]core.Card, error) 
 	if len(realCardList) != len(rawCardList) {
 		return nil, fmt.Errorf("unable to find cards: %v", rawCardList)
 	}
-	p.cardsByColor = cardsByColor
+	p.CardsByColor = cardsByColor
 	return realCardList, nil
 }
 
@@ -148,11 +149,11 @@ func (p *HumanPlayer) SetCoveredCards(origCoveredCards []core.Card) ([]core.Card
 	for _, card := range origCoveredCards {
 		p.AddCard(card)
 	}
-	p.sortCards()
+	p.SortCards()
 	p.ShowCards()
 	for {
 		rawStr := p.getInput("请扣底牌")
-		newCoveredCards, err := core.ParseCards(p.pool, rawStr)
+		newCoveredCards, err := core.ParseCards(p.Pool, rawStr)
 		if err != nil {
 			fmt.Printf("出错了: \n%s\n\n", err)
 			continue

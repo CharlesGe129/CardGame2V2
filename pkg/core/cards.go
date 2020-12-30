@@ -152,13 +152,30 @@ func (cards *Cards) LargerOrEqualTo(others *Cards) bool {
 	}
 	curBig, curType, curNum := cards.ParseBiggest()
 	otherBig, otherType, otherNum := others.ParseBiggest()
-	if curType != otherType {
-		return curType > otherType
+	switch {
+	case curBig.IsMain && !otherBig.IsMain:
+		return true
+	case !curBig.IsMain && otherBig.IsMain:
+		if curType < otherType {
+			return false
+		} else if curType == otherType && curNum <= otherNum {
+			return false
+		} else {
+			return true
+		}
+	default:
+		if curType > otherType {
+			return true
+		} else if curType == otherType {
+			if curNum > otherNum {
+				return true
+			} else {
+				return curBig.LargerOrEqualTo(otherBig)
+			}
+		} else {
+			return curBig.LargerOrEqualTo(otherBig)
+		}
 	}
-	if curNum != otherNum {
-		return curNum > otherNum
-	}
-	return curBig.LargerOrEqualTo(otherBig)
 }
 
 func (cards *Cards) String() string {
@@ -167,4 +184,15 @@ func (cards *Cards) String() string {
 		str += card.String() + " "
 	}
 	return str
+}
+
+func RemoveCardsFromList(removeCards, cardList []Card) []Card {
+	for _, rmCard := range removeCards {
+		for idx, curCard := range cardList {
+			if rmCard.Num == curCard.Num && rmCard.Color == curCard.Color {
+				cardList = append(cardList[:idx], cardList[idx+1:]...)
+			}
+		}
+	}
+	return cardList
 }
