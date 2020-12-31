@@ -60,17 +60,6 @@ func (p *HumanPlayer) ShowCards() {
 	}
 }
 
-func (p *HumanPlayer) AddCard(card core.Card) {
-	cardList, ok := p.CardsByColor[card.Color]
-	if ok {
-		p.CardsByColor[card.Color] = append(cardList, card)
-	} else if p.MainColor != def.CardColorNil {
-		p.CardsByColor[p.MainColor] = append(p.CardsByColor[p.MainColor], card)
-	} else {
-		p.CardsByColor[card.Color] = []core.Card{card}
-	}
-}
-
 func (p *HumanPlayer) NextShot(r *core.Round) (*core.Shot, error) {
 	for {
 		rawStr := p.getInput("请出牌:")
@@ -149,6 +138,7 @@ func (p *HumanPlayer) SetCoveredCards(origCoveredCards []core.Card) ([]core.Card
 	for _, card := range origCoveredCards {
 		p.AddCard(card)
 	}
+	p.SetMainColor(p.Pool)
 	p.SortCards()
 	p.ShowCards()
 	for {

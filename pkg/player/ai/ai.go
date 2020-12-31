@@ -26,8 +26,9 @@ func NewAiPlayer(name string, team uint8) *AiPlayer {
 
 func (p *AiPlayer) NextShot(r *core.Round) (*core.Shot, error) {
 	smartShot := NewSmartShot(p.MainColor, p.CardsByColor)
-	big := r.GetBiggest()
-	cardList, err := smartShot.NextShot(&big)
+	// TODO: big, orig shot
+	origShot, bigShot := r.GetInfo()
+	cardList, err := smartShot.NextShot(origShot, bigShot)
 	if err != nil {
 		return nil, err
 	}
@@ -171,15 +172,6 @@ func (p *AiPlayer) ShowCards() {
 	}
 }
 
-func (p *AiPlayer) AddCard(card core.Card) {
-	cardList, ok := p.CardsByColor[card.Color]
-	if ok {
-		p.CardsByColor[card.Color] = append(cardList, card)
-	} else {
-		p.CardsByColor[card.Color] = []core.Card{card}
-	}
-}
-
 func (p *AiPlayer) RemoveCards(rawCardList []core.Card) ([]core.Card, error) {
 	cardsByColor := make(map[def.CardColor][]core.Card)
 	for color, cards := range p.CardsByColor {
@@ -219,6 +211,7 @@ func (p *AiPlayer) SetCoveredCards(origCoveredCards []core.Card) ([]core.Card, e
 	for _, card := range origCoveredCards {
 		p.AddCard(card)
 	}
+	p.SetMainColor(p.Pool)
 	p.sortCards()
 	var coveredCards []core.Card
 NextColor:

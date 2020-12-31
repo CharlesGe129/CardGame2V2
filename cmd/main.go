@@ -38,6 +38,6 @@ func main() {
 		ai.NewAiPlayer("电脑2", 1),
 		ai.NewAiPlayer("电脑3", 2),
 	}
-	game := pkg.NewGame(players, "K")
-	game.Start()
+	game := pkg.NewGame(players, "2")
+	game.Start(0, 2)
 }

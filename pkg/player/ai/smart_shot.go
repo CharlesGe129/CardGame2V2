@@ -26,8 +26,23 @@ func NewSmartShot(mainColor def.CardColor, cardsByColor map[def.CardColor][]core
 	return &shot
 }
 
-func (p *SmartShot) NextShot(shot *core.Shot) ([]core.Card, error) {
-	_, bigCards := shot.Info()
+func (p *SmartShot) HasCard(origShot core.Shot) bool {
+	_, cards := origShot.Info()
+	card := cards.Cards[0]
+	if card.IsMain {
+		return len(p.cardsByColor[p.mainColor]) > 0
+	} else {
+		return len(p.cardsByColor[card.Color]) > 0
+	}
+}
+
+func (p *SmartShot) NextShot(origShot, bigShot core.Shot) ([]core.Card, error) {
+	// has cards
+	if p.HasCard(origShot) {
+		bigShot = origShot
+	}
+
+	_, bigCards := bigShot.Info()
 	bigCard, bigCardType, bigTypeNum := bigCards.ParseBiggest()
 	bigCount := len(bigCards.Cards)
 	shotColor := bigCard.Color
@@ -41,7 +56,7 @@ func (p *SmartShot) NextShot(shot *core.Shot) ([]core.Card, error) {
 			return cardList, nil
 		}
 	}
-	return p.nextShotFromNormal(shot)
+	return p.nextShotFromNormal(bigShot)
 }
 
 func (p *SmartShot) nextBiggerShotFromMain(bigCard core.Card, bigType, bigTypeNum uint8, bigCount int,
@@ -75,7 +90,7 @@ func (p *SmartShot) nextBiggerShotFromMain(bigCard core.Card, bigType, bigTypeNu
 	return p.nextBiggerShotFromMain(bigCard, bigType, bigTypeNum, bigCount, fromCardList, cardList)
 }
 
-func (p *SmartShot) nextShotFromNormal(shot *core.Shot) ([]core.Card, error) {
+func (p *SmartShot) nextShotFromNormal(shot core.Shot) ([]core.Card, error) {
 	_, bigCards := shot.Info()
 	bigCard, bigType, bigTypeNum := bigCards.ParseBiggest()
 	bigCount := len(bigCards.Cards)

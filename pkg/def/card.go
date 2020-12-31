@@ -9,7 +9,7 @@ const (
 )
 
 var (
-	MapCardName = map[uint8]string{
+	mapCardName = map[uint8]string{
 		2:  "2",
 		3:  "3",
 		4:  "4",
@@ -27,6 +27,7 @@ var (
 		21: "小",
 		22: "大",
 	}
+	MapCardName  map[uint8]string
 	MapCardColor = map[string]CardColor{
 		"hei":  CardColorSpade,
 		"hong": CardColorHeart,
@@ -46,7 +47,20 @@ var (
 
 type CardColor string
 
-func Init() {
+func Init(mainCard string) (origMainNum uint8) {
+	MapCardName = make(map[uint8]string)
+	for k, v := range mapCardName {
+		MapCardName[k] = v
+	}
+	for num, name := range MapCardName {
+		if name == mainCard {
+			origMainNum = num
+			delete(MapCardName, num)
+			break
+		}
+	}
+	MapCardName[15] = mainCard
+
 	MapNameToCard = make(map[string]uint8)
 	for k, v := range MapCardName {
 		MapNameToCard[v] = k
@@ -55,4 +69,5 @@ func Init() {
 	for k, v := range MapCardColor {
 		MapColorToCard[v] = k
 	}
+	return
 }

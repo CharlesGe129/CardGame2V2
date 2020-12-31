@@ -132,3 +132,12 @@ func FindCardsByType(curCardList []core.Card, cardType uint8) [][]core.Card {
 	}
 	return resultList
 }
+
+func (p *Player) AddCard(card core.Card) {
+	cardList, ok := p.CardsByColor[card.Color]
+	if ok {
+		p.CardsByColor[card.Color] = append(cardList, card)
+	} else {
+		p.CardsByColor[card.Color] = []core.Card{card}
+	}
+}

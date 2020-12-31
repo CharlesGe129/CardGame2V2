@@ -25,11 +25,14 @@ type Game struct {
 	mainCardOrigNum uint8
 	defendTeam      uint8
 	assaultScore    uint8
+
+	teamLevelMap map[uint8]uint8
 }
 
 func NewGame(playerList [4]player.Player, mainCard string) *Game {
 	game := Game{
-		Players: playerList,
+		Players:      playerList,
+		teamLevelMap: make(map[uint8]uint8),
 	}
 	// set main card
 	if _, ok := def.MapNameToCard[mainCard]; ok {
@@ -37,26 +40,27 @@ func NewGame(playerList [4]player.Player, mainCard string) *Game {
 	} else {
 		game.mainCardName = "2"
 	}
-	for num, name := range def.MapCardName {
-		if name == mainCard {
-			game.mainCardOrigNum = num
-			delete(def.MapCardName, num)
-			break
-		}
-	}
-	def.MapCardName[15] = mainCard
+	game.teamLevelMap[1] = def.MapNameToLevel[mainCard]
+	game.teamLevelMap[2] = def.MapNameToLevel[mainCard]
 
-	def.Init()
-	fmt.Printf("游戏准备完毕，本轮牌库: %+v\n\n", def.MapCardName)
 	return &game
 }
 
-func (g *Game) Start() {
+func (g *Game) Start(firstPlayerIndex int, nextLevel uint8) {
+	g.assaultScore = 0
+	for team, level := range g.teamLevelMap {
+		fmt.Printf("队伍%d正在打%s\n", team, def.MapLevelToName[level])
+	}
+	fmt.Printf("本轮防守队伍为%d, 本轮打%s, 由%s先出牌\n", g.defendTeam+1, def.MapLevelToName[nextLevel], g.Players[firstPlayerIndex].GetName())
+	g.mainCardOrigNum = def.Init(def.MapLevelToName[nextLevel])
+	fmt.Printf("游戏准备完毕，本轮牌库: %+v\n\n", def.MapCardName)
+
 	p0, err := g.AssignCards()
 	if err != nil {
 		log.Fatal(err)
 	}
-	g.defendTeam = g.Players[1].GetTeam()
+	p0 = g.Players[firstPlayerIndex]
+	g.defendTeam = p0.GetTeam()
 	for !g.Players[0].IsFinished() {
 		// p0
 		shot := p0.NewShot()
@@ -122,11 +126,13 @@ func (g *Game) Start() {
 		g.assaultScore += coveredScores
 	}
 
+	var winTeam uint8
 	if g.assaultScore >= 80 {
 		fmt.Printf("进攻方获胜，共得到%d分，获胜玩家：", g.assaultScore)
 		for _, p := range g.Players {
 			if p.GetTeam() != g.defendTeam {
 				fmt.Printf("%s ", p.GetName())
+				winTeam = p.GetTeam()
 			}
 		}
 	} else {
@@ -134,10 +140,31 @@ func (g *Game) Start() {
 		for _, p := range g.Players {
 			if p.GetTeam() == g.defendTeam {
 				fmt.Printf("%s ", p.GetName())
+				winTeam = p.GetTeam()
 			}
 		}
 	}
 	fmt.Println()
+
+	// update level, start next game
+	level := g.teamLevelMap[winTeam]
+	if level == 14 {
+		fmt.Printf("队伍%d打穿获胜！", winTeam)
+		return
+	}
+	if winTeam == g.defendTeam {
+		level = g.NextDefendLevel(level, g.assaultScore)
+		g.teamLevelMap[winTeam] = level
+		firstPlayerIndex += 2
+	} else {
+		level = g.NextAssaultLevel(level, g.assaultScore)
+		g.teamLevelMap[winTeam] = level
+		firstPlayerIndex += 1
+	}
+	if firstPlayerIndex >= 4 {
+		firstPlayerIndex -= 4
+	}
+	g.Start(firstPlayerIndex, level)
 }
 
 func (g *Game) AssignCards() (player.Player, error) {
@@ -228,4 +255,31 @@ func initialCards(mainCardNum uint8) []core.Card {
 		cardList = append(cardList, core.Card{Num: 22, IsMain: true})
 	}
 	return cardList
+}
+
+func (g *Game) NextAssaultLevel(level, score uint8) uint8 {
+	if score >= 160 {
+		level += 3
+	} else if score >= 120 {
+		level += 2
+	} else if score >= 80 {
+		level += 1
+	}
+	if level > 14 {
+		level = 14
+	}
+	return level
+}
+func (g *Game) NextDefendLevel(level, score uint8) uint8 {
+	if score == 0 {
+		level += 3
+	} else if score < 40 {
+		level += 2
+	} else {
+		level += 1
+	}
+	if level > 14 {
+		level = 14
+	}
+	return level
 }

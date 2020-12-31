@@ -56,6 +56,6 @@ func (r *Round) ShowShots() {
 	fmt.Printf("您是第%d位\n", len(r.shotList)+1)
 }
 
-func (r *Round) GetBiggest() Shot {
-	return r.biggest
+func (r *Round) GetInfo() (Shot, Shot) {
+	return r.shotList[0], r.biggest
 }
